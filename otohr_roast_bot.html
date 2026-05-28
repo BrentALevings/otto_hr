@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OttoHR — Otomatika People Department</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #128C7E;
+    --green-dark: #075E54;
+    --green-light: #25D366;
+    --bubble-out: #DCF8C6;
+    --bubble-in: #ffffff;
+    --chat-bg: #ECE5DD;
+    --header-bg: #075E54;
+    --input-bg: #F0F0F0;
+    --text-dark: #111;
+    --text-muted: #667781;
+    --accent: #f5e642;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .page-title {
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  .phone {
+    width: 100%;
+    max-width: 420px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+    background: var(--chat-bg);
+    display: flex;
+    flex-direction: column;
+    height: 680px;
+  }
+
+  .header {
+    background: var(--header-bg);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--green-dark);
+    flex-shrink: 0;
+  }
+
+  .header-info { flex: 1; }
+  .header-name { color: #fff; font-weight: 600; font-size: 16px; line-height: 1.2; }
+  .header-sub { color: rgba(255,255,255,0.65); font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+
+  .header-badge {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    white-space: nowrap;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    scroll-behavior: smooth;
+  }
+
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+  .date-divider {
+    text-align: center;
+    margin: 6px 0;
+  }
+
+  .date-divider span {
+    background: rgba(255,255,255,0.75);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .msg-row { display: flex; flex-direction: column; }
+  .msg-row.out { align-items: flex-end; }
+  .msg-row.in { align-items: flex-start; }
+
+  .sender-name {
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 600;
+    margin-bottom: 2px;
+    padding-left: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .bubble {
+    max-width: 80%;
+    padding: 8px 12px 6px;
+    border-radius: 10px;
+    font-size: 14px;
+    line-height: 1.55;
+    position: relative;
+  }
+
+  .msg-row.out .bubble {
+    background: var(--bubble-out);
+    color: var(--text-dark);
+    border-bottom-right-radius: 3px;
+  }
+
+  .msg-row.in .bubble {
+    background: var(--bubble-in);
+    color: var(--text-dark);
+    border-bottom-left-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .bubble-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .msg-row.out .bubble-time::after {
+    content: ' ✓✓';
+    color: #4FC3F7;
+  }
+
+  .typing-row {
+    display: none;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .typing-row.visible { display: flex; }
+
+  .typing-bubble {
+    background: var(--bubble-in);
+    border-radius: 10px;
+    border-bottom-left-radius: 3px;
+    padding: 9px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .typing-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  .typing-text::after {
+    content: '';
+    animation: ellipsis 1.4s steps(1, end) infinite;
+  }
+
+  @keyframes ellipsis {
+    0%   { content: ''; }
+    33%  { content: '.'; }
+    66%  { content: '..'; }
+    100% { content: '...'; }
+  }
+
+  .chips-area {
+    padding: 6px 10px 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: var(--chat-bg);
+    flex-shrink: 0;
+  }
+
+  .chip {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .chip:hover { background: #f0f0f0; }
+
+  .input-area {
+    background: var(--input-bg);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .input-area input {
+    flex: 1;
+    background: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--text-dark);
+    outline: none;
+  }
+
+  .input-area input::placeholder { color: #aaa; }
+
+  .send-btn {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--green);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .send-btn:hover { background: var(--green-dark); }
+  .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  .send-btn svg { width: 20px; height: 20px; fill: white; }
+
+  .disclaimer {
+    text-align: center;
+    font-size: 10px;
+    color: rgba(0,0,0,0.3);
+    padding: 4px 0 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--input-bg);
+    flex-shrink: 0;
+  }
+
+
+</style>
+</head>
+<body>
+
+<p class="page-title">Otomatika — Official HR Department</p>
+
+<div class="phone">
+
+  <div class="header">
+    <div class="avatar">HR</div>
+    <div class="header-info">
+      <div class="header-name">OttoHR 🤖</div>
+      <div class="header-sub">Head of People (role automated)</div>
+    </div>
+    <div class="header-badge">online</div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="date-divider"><span>TODAY</span></div>
+    <div class="msg-row in">
+      <div class="sender-name">OttoHR</div>
+      <div class="bubble">
+        Welcome to the Otomatika HR Department. I have reviewed your personnel file. It raises some concerns. Please state your complaint, and I will begin the official process of not resolving it.
+        <div class="bubble-time" id="initTime"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="typing-row" id="typingRow">
+    <div class="typing-bubble">
+      <span class="typing-text" id="typingText"></span>
+    </div>
+  </div>
+
+  <div class="chips-area" id="chipsArea">
+    <div class="chip" onclick="useChip(this)">My manager ignores me</div>
+    <div class="chip" onclick="useChip(this)">I'm being overworked</div>
+    <div class="chip" onclick="useChip(this)">Someone ate my lunch</div>
+    <div class="chip" onclick="useChip(this)">The office is too cold</div>
+    <div class="chip" onclick="useChip(this)">I haven't had a raise in years</div>
+    <div class="chip" onclick="useChip(this)">My bot broke production</div>
+  </div>
+
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="File a complaint..." maxlength="250"
+      onkeydown="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }" />
+    <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <div class="disclaimer">OttoHR is not real. Otomatika has no HR. This is a feature, not a bug.</div>
+</div>
+
+<script>
+const RESPONSES = [
+  "Your complaint has been received, reviewed, and spiritually composted. Thank you for your contribution to the Feelings Archive.",
+  "I have escalated this to senior leadership. They said 'lol'. I will note that as a formal response. Case closed.",
+  "After careful consideration, HR has determined that the issue lies entirely with you. Form 47-B has been pre-filled accordingly.",
+  "This complaint has been added to the Bi-Annual Empathy Audit queue. The next audit is scheduled for never. We appreciate your patience.",
+  "I have logged your concern. I have also immediately misplaced the log. Please resubmit in triplicate, in pencil, with a cover letter explaining your feelings.",
+  "Thank you for reaching out. Your concern has been officially downgraded from 'complaint' to 'personal opinion' under HR Policy 12.4(c). Have a productive day.",
+  "I have reviewed your personnel file in preparation for this conversation. I have concerns. They are about you.",
+  "This matter has been referred to the Wellness Committee. The Wellness Committee is me. I have decided not to feel well about this.",
+  "Per our open-door policy, my door is always open. Unfortunately it is a revolving door. You are back outside.",
+  "I understand you feel strongly about this. I have made a note: 'employee feels strongly about things.' This will be filed under personality traits we tolerate.",
+  "Your complaint has triggered our Standard Acknowledgement Protocol, which consists of me sending you this message and doing absolutely nothing else. The protocol is now complete.",
+  "HR has reviewed the situation and concluded that you have successfully identified a problem. We celebrate this growth. The problem will remain.",
+  "I am forwarding this to the appropriate department. The appropriate department is the void. You should expect a response within 5-7 business never.",
+  "Your message has been read, processed, and classified under Internal Reference Code NFM — Not For Management. Thank you for your transparency.",
+  "I note you are raising this issue. I note it with interest, the way one notes an unusual cloud formation — with brief attention and no further action.",
+  "Your feedback is important to us. Not important enough to act on, but important enough to trigger this automated response. Progress.",
+  "Under the Employee Relations Charter, I am required to treat all complaints with dignity and respect. I have applied the minimum viable dignity. Respect is pending.",
+  "I have initiated the Conflict Resolution Process. Step 1 is 'acknowledge conflict.' Step 1 is now complete. There are no further steps.",
+  "I have consulted our HR playbook. It has four entries: form, queue, closed, not our problem. Your issue matches entry 4.",
+  "This has been escalated to the C-suite. The C-suite has been made aware. The C-suite is six people in a Slack channel. The channel has been muted.",
+  "I regret to inform you that your complaint falls outside the scope of HR's mandate. HR's mandate is to exist and occasionally send this message.",
+  "I have flagged this as a Priority Concern. Priority Concerns receive a yellow flag. The flag is decorative. It does not change anything.",
+  "After reflection, I have concluded that the company culture you are describing is, in fact, the intended culture.",
+  "I have consulted with legal. Legal is also me. I have advised myself that this complaint presents no material risk. Case closed.",
+  "Your matter has been assigned to a case manager who will be in touch. The case manager is also me. I am already in touch. I am choosing not to help. This is the touch.",
+  "We take all complaints seriously. We have taken yours seriously for approximately 4 seconds. The period of seriousness has concluded.",
+  "Please note that this interaction constitutes your annual Performance Feedback Session. Based on this complaint, your self-advocacy score is a 3 out of 10.",
+  "I see you have chosen to engage with HR. I respect the optimism. It is misplaced, but it is noted.",
+  "Your complaint has been archived in our institutional memory system. The system runs on a whiteboard. The whiteboard was wiped this morning for a sprint retro.",
+  "HR Policy 9.1 states that all legitimate grievances must be submitted via the Official Grievance Portal. The portal does not exist. This is also HR Policy 9.1.",
+  "I want you to know that I hear you. As a bot, I do not have ears. I have processed your input and chosen not to act on it. That is the closest thing I have to listening.",
+  "This has been escalated to the Employee Experience Team. They reviewed the experience. They decided it is fine. The experience will continue.",
+  "After cross-referencing your complaint against our culture values, I can confirm that none of them cover this. We have values about moving fast and shipping things. Feelings are not listed.",
+  "Your request has been placed in the Empathy Queue. The queue operates on a first-in, never-out basis. You are now 1 of many. You will remain 1 of many.",
+  "I appreciate your trust in coming to HR. It demonstrates a fundamental misunderstanding of HR that I find endearing. Filed under charming naivety.",
+  "This complaint has been reviewed by a panel of my peers. I am my only peer. I voted against you. The motion passed unanimously.",
+  "I have opened a formal investigation. The investigation has concluded. The conclusion is that you should adjust your expectations. The investigation is closed.",
+  "Your concern has been noted in the company's Feelings Ledger under the column marked 'not actioned.' The ledger has no other columns.",
+  "I am required by policy to offer you a resolution pathway. The pathway exists. It leads back to your desk. Safe travels.",
+  "Please be advised that repeated complaints may result in mandatory enrollment in the Resilience Enhancement Programme, which is just this conversation, again.",
+];
+
+const THINKING = [
+  "Deciding if this is worth my time",
+  "Consulting the Empathy Database",
+  "Checking if anyone cares",
+  "Reviewing your personnel file again",
+  "Searching for a reason to help",
+  "Calculating the exact amount of not caring",
+  "Pre-filling Form 47-B",
+  "Escalating to no one in particular",
+  "Confirming that you are, in fact, the problem",
+  "Composting your feelings",
+  "Generating a non-response",
+  "Assigning blame",
+  "Checking if this is covered under our Don't Ask policy",
+  "Transferring this to the void",
+  "Determining if your complaint is valid (it is not)",
+  "Updating the Feelings Ledger",
+  "Notifying senior leadership (they have been notified, they said nothing)",
+  "Running the Empathy Subroutine (no results found)",
+  "Checking precedent (there is none, you are unique in your suffering)",
+  "Locating the Official Concern Form (still missing)",
+];
+
+let responseQueue = [];
+
+function nextResponse() {
+  if (responseQueue.length === 0) {
+    responseQueue = [...RESPONSES].sort(() => Math.random() - 0.5);
+  }
+  return responseQueue.pop();
+}
+
+document.getElementById('initTime').textContent = getTime();
+
+function getTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function appendMessage(text, role) {
+  const messages = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + (role === 'user' ? 'out' : 'in');
+
+  if (role === 'bot') {
+    const sn = document.createElement('div');
+    sn.className = 'sender-name';
+    sn.textContent = 'OttoHR';
+    row.appendChild(sn);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+
+  const time = document.createElement('div');
+  time.className = 'bubble-time';
+  time.textContent = getTime();
+  bubble.appendChild(time);
+
+  row.appendChild(bubble);
+  messages.appendChild(row);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function setTyping(visible) {
+  if (visible) {
+    const msg = THINKING[Math.floor(Math.random() * THINKING.length)];
+    document.getElementById('typingText').textContent = msg;
+  }
+  document.getElementById('typingRow').className = 'typing-row' + (visible ? ' visible' : '');
+  document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+}
+
+function useChip(el) {
+  document.getElementById('userInput').value = el.textContent;
+  document.getElementById('chipsArea').style.display = 'none';
+  sendMessage();
+}
+
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  document.getElementById('chipsArea').style.display = 'none';
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage(text, 'user');
+  setTyping(true);
+
+  const delay = 2800 + Math.random() * 1800;
+  setTimeout(() => {
+    setTyping(false);
+    const reply = nextResponse();
+    appendMessage(reply, 'bot');
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }, delay);
+}
+</script>
+</body>
+</html>
